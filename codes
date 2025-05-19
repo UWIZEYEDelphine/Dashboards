@@ -1,0 +1,466 @@
+DECLARE @EmailBody NVARCHAR(MAX);
+DECLARE @TodayDate NVARCHAR(50) = CONVERT(DATE, GETDATE() - 1);
+SET @EmailBody = '<html>
+<head>
+<style>
+  table {
+    width: 90%;
+    max-width: 600px;
+    table-layout: fixed;
+    margin: auto;
+  }
+  
+  @media screen and (max-width: 600px) {
+    table {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+<h2 style="color:#333;">EBU Prepaid Report</h2>
+<p style="font-size:18px; color:#555;">Daily Performance as of ' + @TodayDate + '</p>'
+
+SET @EmailBody = @EmailBody +
+'<table border="1" cellpadding="3" cellspacing="0" style="width:40%; table-layout:fixed; margin:auto; font-size:10px;">
+<colgroup>
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+</colgroup>
+<tr style="background-color:#FFD700; color:#333;">
+<th>KPI</th>
+<th>TODAY</th>
+<th>PREVIOUS_DAY</th>
+<th>CHANGE</th>
+<th>MTD</th>
+<th>PMTD</th>
+<th>MTD_CHANGE</th>
+</tr>';
+
+WITH RGS AS (
+	SELECT 
+    'RGS1'AS KPI,
+    FORMAT(RGS1_today, '#,##0')AS TODAY,
+    FORMAT(RGS1_prev, '#,##0')AS PREVIOUS_DAY,
+	FORMAT(ISNULL(((RGS1_today - RGS1_prev) / NULLIF(RGS1_prev, 0)) * 100, 0), '#,##0.00') + '%' as CHANGE,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+
+FROM (
+    SELECT 
+        sum(rgs_1) AS RGS1_today,
+        (SELECT sum(rgs_1) FROM [dbo].[ebu_phone_deal_rgs] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS RGS1_prev,
+		(select SUM(rgs_1) FROM [dbo].[ebu_phone_deal_rgs]
+			WHERE Date_key = FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(rgs_1) FROM [dbo].[ebu_phone_deal_rgs] 
+             WHERE Date_key= FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_rgs]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'RGS7',
+    FORMAT(RGS7_today, '#,##0'),
+    FORMAT(RGS7_prev, '#,##0'),
+    FORMAT(ISNULL(((RGS7_today - RGS7_prev) / NULLIF(RGS7_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rgs_7) AS RGS7_today,
+        (SELECT sum(rgs_7) FROM [dbo].[ebu_phone_deal_rgs] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS RGS7_prev,
+		(select SUM(rgs_7) FROM [dbo].[ebu_phone_deal_rgs]
+			WHERE Date_key =FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(rgs_7) FROM [dbo].[ebu_phone_deal_rgs] 
+             WHERE Date_key=FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_rgs]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'RGS30',
+    FORMAT(RGS30_today, '#,##0'),
+    FORMAT(RGS30_prev, '#,##0'),
+    FORMAT(ISNULL(((RGS30_today - RGS30_prev) / NULLIF(RGS30_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rgs_30) AS RGS30_today,
+        (SELECT sum(rgs_30) FROM [dbo].[ebu_phone_deal_rgs] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS RGS30_prev,
+		(select SUM(rgs_30) FROM [dbo].[ebu_phone_deal_rgs]
+			WHERE Date_key = FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(rgs_30) FROM [dbo].[ebu_phone_deal_rgs] 
+             WHERE Date_key = FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_rgs]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'RGS90',
+    FORMAT(RGS90_today, '#,##0'),
+    FORMAT(RGS90_prev, '#,##0'),
+    FORMAT(ISNULL(((RGS90_today - RGS90_prev) / NULLIF(RGS90_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rgs_90) AS RGS90_today,
+        (SELECT sum(rgs_90) FROM [dbo].[ebu_phone_deal_rgs] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS RGS90_prev,
+		(select SUM(rgs_90) FROM [dbo].[ebu_phone_deal_rgs]
+			WHERE Date_key = FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(rgs_90) FROM [dbo].[ebu_phone_deal_rgs] 
+             WHERE Date_key = FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_rgs]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+) 
+
+-- Fill Table with Data
+SELECT @EmailBody = @EmailBody + 
+'<tr><td>' + ISNULL(KPI, 'N/A') + '</td><td>' + ISNULL(Today, '0') + '</td><td>' + ISNULL(PREVIOUS_DAY, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + Change + '</td>
+<td>' + ISNULL(MTD, '0') + '</td><td>' + ISNULL(PMTD, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN MTD_Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + MTD_Change + '</td></tr>'
+FROM RGS;
+SET @EmailBody = @EmailBody + '</table>';
+
+SET @EmailBody = @EmailBody + 
+'<table border="1" cellpadding="3" cellspacing="0" style="width:40%; table-layout:fixed; margin:auto; font-size:10px;">
+<colgroup>
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+</colgroup>
+<tr style="background-color:#FFD700; color:#333;">
+<th>KPI</th>
+<th>TODAY</th>
+<th>PREVIOUS_DAY</th>
+<th>CHANGE</th>
+<th>MTD</th>
+<th>PMTD</th>
+<th>MTD_CHANGE</th>
+</tr>';
+
+WITH Revenue AS (
+	SELECT 
+        'Total Revenue' AS KPI,
+        FORMAT(Total_revenue_today, '#,##0') AS TODAY,
+        FORMAT(Total_revenue_prev, '#,##0') AS PREVIOUS_DAY,
+        FORMAT(ISNULL(((Total_revenue_today - Total_revenue_prev) / NULLIF(Total_revenue_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+        FORMAT(MTD_revenue, '#,##0') AS MTD,
+        FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+        FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+    FROM (
+        SELECT 
+            SUM(tot_rev) AS Total_revenue_today,
+            (SELECT SUM(tot_rev) FROM [dbo].[ebu_phone_deal_revenue] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS Total_revenue_prev,
+            (select SUM(tot_rev) FROM [dbo].[ebu_phone_deal_revenue]
+			WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(tot_rev) FROM [dbo].[ebu_phone_deal_revenue] 
+             WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+             AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+        FROM [dbo].[ebu_phone_deal_revenue]
+        WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+    ) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'Voice_Revenue',
+    FORMAT(Voice_Revenue_today, '#,##0'),
+    FORMAT(Voice_Revenue_prev, '#,##0'),
+    FORMAT(ISNULL(((Voice_Revenue_today - Voice_Revenue_prev) / NULLIF(Voice_Revenue_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rev_voice_int+rev_voice_offnet+rev_voice_onnet+rev_voice_pack+rev_voice_roam_incoming+rev_voice_roam_outgoing) AS Voice_Revenue_today,
+        (SELECT sum(rev_voice_int+rev_voice_offnet+rev_voice_onnet+rev_voice_pack+rev_voice_roam_incoming+rev_voice_roam_outgoing) FROM [dbo].[ebu_phone_deal_revenue] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS Voice_Revenue_prev,
+		(select SUM(rev_voice_int+rev_voice_offnet+rev_voice_onnet+rev_voice_pack+rev_voice_roam_incoming+rev_voice_roam_outgoing) FROM [dbo].[ebu_phone_deal_revenue]
+			WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(rev_voice_int+rev_voice_offnet+rev_voice_onnet+rev_voice_pack+rev_voice_roam_incoming+rev_voice_roam_outgoing) FROM [dbo].[ebu_phone_deal_revenue] 
+             WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+             AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_revenue]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'Data_Revenue',
+    FORMAT(Data_Revenue_today, '#,##0'),
+    FORMAT(Data_Revenue_prev, '#,##0'),
+    FORMAT(ISNULL(((Data_Revenue_today - Data_Revenue_prev) / NULLIF(Data_Revenue_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rev_data_total) AS Data_Revenue_today,
+        (SELECT sum(rev_data_total) FROM [dbo].[ebu_phone_deal_revenue] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS Data_Revenue_prev,
+		(select SUM(rev_data_total) FROM [dbo].[ebu_phone_deal_revenue]
+		WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+        (SELECT SUM(rev_data_total) FROM [dbo].[ebu_phone_deal_revenue] 
+         WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+         AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_revenue]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'SMS_Revenue',
+    FORMAT(SMS_Revenue_today, '#,##0'),
+    FORMAT(SMS_Revenue_prev, '#,##0'),
+    FORMAT(ISNULL(((SMS_Revenue_today - SMS_Revenue_prev) / NULLIF(SMS_Revenue_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rev_sms_int+rev_sms_offnet+rev_sms_onnet+rev_sms_roaming) AS SMS_Revenue_today,
+        (SELECT sum(rev_sms_int+rev_sms_offnet+rev_sms_onnet+rev_sms_roaming) FROM [dbo].[ebu_phone_deal_revenue] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS SMS_Revenue_prev,
+		(select SUM(rev_sms_int+rev_sms_offnet+rev_sms_onnet+rev_sms_roaming) FROM [dbo].[ebu_phone_deal_revenue]
+		WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+        (SELECT SUM(rev_sms_int+rev_sms_offnet+rev_sms_onnet+rev_sms_roaming) FROM [dbo].[ebu_phone_deal_revenue] 
+         WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+         AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_revenue]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'VAS_Revenue',
+    FORMAT(VAS_Revenue_today, '#,##0'),
+    FORMAT(VAS_Revenue_prev, '#,##0'),
+    FORMAT(ISNULL(((VAS_Revenue_today - VAS_Revenue_prev) / NULLIF(VAS_Revenue_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+        FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+        FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM (
+    SELECT 
+        sum(rev_VAS1+rev_VAS2+rev_VAS3+rev_VAS4+rev_other_VAS) AS VAS_Revenue_today,
+        (SELECT sum(rev_VAS1+rev_VAS2+rev_VAS3+rev_VAS4+rev_other_VAS) FROM [dbo].[ebu_phone_deal_revenue] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS VAS_Revenue_prev,
+		(select SUM(rev_VAS1+rev_VAS2+rev_VAS3+rev_VAS4+rev_other_VAS) FROM [dbo].[ebu_phone_deal_revenue]
+		WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+        (SELECT SUM(rev_VAS1+rev_VAS2+rev_VAS3+rev_VAS4+rev_other_VAS) FROM [dbo].[ebu_phone_deal_revenue] 
+         WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+         AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+    FROM [dbo].[ebu_phone_deal_revenue]
+    WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+) AS SubQuery
+) 
+
+-- Fill Table with Data
+SELECT @EmailBody = @EmailBody + 
+'<tr><td>' + ISNULL(KPI, 'N/A') + '</td><td>' + ISNULL(Today, '0') + '</td><td>' + ISNULL(PREVIOUS_DAY, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + Change + '</td>
+<td>' + ISNULL(MTD, '0') + '</td><td>' + ISNULL(PMTD, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN MTD_Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + MTD_Change + '</td></tr>'
+FROM Revenue;
+-- Close the table first
+SET @EmailBody = @EmailBody + '</table>';
+
+SET @EmailBody = @EmailBody + 
+'<table border="1" cellpadding="3" cellspacing="0" style="width:40%; table-layout:fixed; margin:auto; font-size:10px;">
+<colgroup>
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+</colgroup>
+<tr style="background-color:#FFD700; color:#333;">
+<th>KPI</th>
+<th>TODAY</th>
+<th>PREVIOUS_DAY</th>
+<th>CHANGE</th>
+<th>MTD</th>
+<th>PMTD</th>
+<th>MTD_CHANGE</th>
+</tr>';
+
+WITH Traffic AS (
+	SELECT 
+        'Voice_MIN' AS KPI,
+        FORMAT(Voice_MIN_today, '#,##0') AS TODAY,
+        FORMAT(Voice_MIN_prev, '#,##0') AS PREVIOUS_DAY,
+        FORMAT(ISNULL(((Voice_MIN_today - Voice_MIN_prev) / NULLIF(Voice_MIN_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+        FORMAT(MTD_Traffic, '#,##0') AS MTD,
+        FORMAT(PMTD_Traffic, '#,##0') AS PMTD,
+        FORMAT(ISNULL(((MTD_Traffic - PMTD_Traffic) / NULLIF(PMTD_Traffic, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM 
+OPENQUERY(EVA, 'select sum(voi_int_in_secs+voi_int_out_b_secs+voi_int_out_nb_secs+voi_int_out_secs_free+voi_roam_moc_secs+voi_roam_moc_free_secs
++voi_roam_mtc_secs+voi_roam_mtc_free_secs+voi_offnet_in_secs+voi_offnet_out_b_secs+voi_offnet_out_nb_secs+voi_offnet_out_secs_free+voi_onnet_in_secs+
+voi_onnet_out_b_secs+voi_onnet_out_nb_secs+voi_onnet_out_secs_free)/60 Voice_MIN_today,(select sum(voi_int_in_secs+voi_int_out_b_secs+voi_int_out_nb_secs+
+voi_int_out_secs_free+voi_roam_moc_secs+voi_roam_moc_free_secs+voi_roam_mtc_secs+voi_roam_mtc_free_secs+voi_offnet_in_secs+voi_offnet_out_b_secs+
+voi_offnet_out_nb_secs+voi_offnet_out_secs_free+voi_onnet_in_secs+voi_onnet_out_b_secs+voi_onnet_out_nb_secs+voi_onnet_out_secs_free)/60 
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -2,current_date))Voice_MIN_prev,(select sum(voi_int_in_secs+voi_int_out_b_secs+
+voi_int_out_nb_secs+voi_int_out_secs_free+voi_roam_moc_secs+voi_roam_moc_free_secs+voi_roam_mtc_secs+voi_roam_mtc_free_secs+voi_offnet_in_secs+
+voi_offnet_out_b_secs+voi_offnet_out_nb_secs+voi_offnet_out_secs_free+voi_onnet_in_secs+voi_onnet_out_b_secs+voi_onnet_out_nb_secs+voi_onnet_out_secs_free)/60
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date)) AND DATE_ADD(''day'', -1, current_date))MTD_Traffic,(select sum(voi_int_in_secs+
+voi_int_out_b_secs+voi_int_out_nb_secs+voi_int_out_secs_free+voi_roam_moc_secs+voi_roam_moc_free_secs+voi_roam_mtc_secs+voi_roam_mtc_free_secs+
+voi_offnet_in_secs+voi_offnet_out_b_secs+voi_offnet_out_nb_secs+voi_offnet_out_secs_free+voi_onnet_in_secs+voi_onnet_out_b_secs+voi_onnet_out_nb_secs+voi_onnet_out_secs_free)/60 
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_ADD(''month'', -1, DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date))) 
+AND DATE_ADD(''month'', -1, DATE_ADD(''day'', -1, current_date))) AS PMTD_Traffic
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -1,current_date)')
+ AS SubQuery
+ UNION ALL
+ SELECT 
+        'Data_TB' AS KPI,
+        FORMAT(Data_TB_today, '#,##0') AS TODAY,
+        FORMAT(Data_TB_prev, '#,##0') AS PREVIOUS_DAY,
+        FORMAT(ISNULL(((Data_TB_today - Data_TB_prev) / NULLIF(Data_TB_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+        FORMAT(MTD_Traffic, '#,##0') AS MTD,
+        FORMAT(PMTD_Traffic, '#,##0') AS PMTD,
+        FORMAT(ISNULL(((MTD_Traffic - PMTD_Traffic) / NULLIF(PMTD_Traffic, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+FROM 
+OPENQUERY(EVA, 'select sum((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024)) Data_TB_today,(select sum((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024)) 
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -2,current_date))Data_TB_prev,(select sum((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024))
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date)) AND DATE_ADD(''day'', -1, current_date))MTD_Traffic,(select sum((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024)) 
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_ADD(''month'', -1, DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date))) 
+AND DATE_ADD(''month'', -1, DATE_ADD(''day'', -1, current_date))) AS PMTD_Traffic
+from hive.bsl.dslcustomersubject c
+join hive.analytics.olivier_phone_deal_202504 p
+on c.msisdn_key =p.msisdn_key
+WHERE  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -1,current_date)')
+ AS SubQuery)
+-- Fill Table with Data
+SELECT @EmailBody = @EmailBody + 
+'<tr><td>' + ISNULL(KPI, 'N/A') + '</td><td>' + ISNULL(Today, '0') + '</td><td>' + ISNULL(PREVIOUS_DAY, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + Change + '</td>
+<td>' + ISNULL(MTD, '0') + '</td><td>' + ISNULL(PMTD, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN MTD_Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + MTD_Change + '</td></tr>'
+FROM Traffic;
+-- Close the table first
+SET @EmailBody = @EmailBody + '</table>';
+
+SET @EmailBody = @EmailBody + 
+'<table border="1" cellpadding="3" cellspacing="0" style="width:40%; table-layout:fixed; margin:auto; font-size:10px;">
+<colgroup>
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+</colgroup>
+<tr style="background-color:#FFD700; color:#333;">
+<th>KPI</th>
+<th>TODAY</th>
+<th>PREVIOUS_DAY</th>
+<th>CHANGE</th>
+<th>MTD</th>
+<th>PMTD</th>
+<th>MTD_CHANGE</th>
+</tr>';
+
+WITH Reloads AS (
+	SELECT 
+        'Total Reloads' AS KPI,
+        FORMAT(Total_Reloads_today, '#,##0') AS TODAY,
+        FORMAT(Total_Reloads_prev, '#,##0') AS PREVIOUS_DAY,
+        FORMAT(ISNULL(((Total_Reloads_today - Total_Reloads_prev) / NULLIF(Total_Reloads_prev, 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+        FORMAT(MTD_revenue, '#,##0') AS MTD,
+        FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+        FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+    FROM (
+        SELECT 
+            SUM(reload_digital_amt+reload_mobile_money_amt+reload_xtra_airtime_loan_amt+send_air_me2u_amt+reload_air_other_amt) AS Total_Reloads_today,
+            (SELECT SUM(reload_digital_amt+reload_mobile_money_amt+reload_xtra_airtime_loan_amt+send_air_me2u_amt+reload_air_other_amt) FROM [dbo].[ebu_phone_deal_recharges] WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 2)) AS Total_Reloads_prev,
+            (select SUM(reload_digital_amt+reload_mobile_money_amt+reload_xtra_airtime_loan_amt+send_air_me2u_amt+reload_air_other_amt) FROM [dbo].[ebu_phone_deal_recharges]
+			WHERE Date_key BETWEEN FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMM01') AND FORMAT(DATEADD(DAY, -1, GETDATE()), 'yyyyMMdd')) AS MTD_revenue,
+            (SELECT SUM(reload_digital_amt+reload_mobile_money_amt+reload_xtra_airtime_loan_amt+send_air_me2u_amt+reload_air_other_amt) FROM [dbo].[ebu_phone_deal_recharges] 
+             WHERE Date_key BETWEEN FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMM01') 
+             AND FORMAT(DATEADD(MONTH, -1, DATEADD(DAY, -1, GETDATE())), 'yyyyMMdd')) AS PMTD_revenue
+        FROM [dbo].[ebu_phone_deal_recharges]
+        WHERE CONVERT(DATE, CAST(Date_key AS VARCHAR(8)), 112) = CONVERT(DATE, GETDATE() - 1)
+    ) AS SubQuery)
+	-- Fill Table with Data
+SELECT @EmailBody = @EmailBody + 
+'<tr><td>' + ISNULL(KPI, 'N/A') + '</td><td>' + ISNULL(Today, '0') + '</td><td>' + ISNULL(PREVIOUS_DAY, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + Change + '</td>
+<td>' + ISNULL(MTD, '0') + '</td><td>' + ISNULL(PMTD, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN MTD_Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + MTD_Change + '</td></tr>'
+FROM Reloads;
+-- Close the table first
+SET @EmailBody = @EmailBody + '</table>';
+-- Now add the closing message outside the table
+SET @EmailBody = @EmailBody + '<p style="font-size:10px; color:#8B0000;">MTD:Month to Date PMTD:Previous Month to Date</p>
+<p style="font-size:18px; color:#555;">Let me know if further analysis is needed.</p></body></html>';
+EXEC msdb.dbo.sp_send_dbmail
+   @profile_name =  'email_notification',
+    @recipients =  'delphine.uwizeye@mtn.com',
+    @subject = 'EBU Prepaid Report',
+    @body = @EmailBody,
+    @body_format = 'HTML';
+
