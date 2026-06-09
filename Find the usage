@@ -1,0 +1,36 @@
+--Voice usage Updated
+select  /*+parallel(10) */
+msisdn_key ,sum(cast(call_duration_enrich as double))/60 as call_duration_MIN,sum(try_cast(amount_enrich as double))as Event_amount
+from hive.feeds.ccn_cdr 
+where tbl_dt between 20241101 and 20241130
+and servicetype = 'VOICE'
+and (try_cast(msisdn_key as varchar) in ('250788679895',
+'250788315228'))
+group by msisdn_key
+
+
+--DATA USAGE (MB) UPDATED
+Select /*+parallel(10) */
+tbl_dt,msisdn_key,(sum(try_cast(data_volume_enrich as double)))/(1024*1024) as Data_usage_MB,sum(try_cast(amount_enrich as double))as Event_amount
+from hive.feeds.ccn_cdr 
+where tbl_dt between 20241101 and 20241118
+and servicetype = 'GPRS' 
+and (try_cast(msisdn_key as varchar) in ('250792958243',
+'250792958136',
+'250792958409',
+'250792958253'))
+group by msisdn_key ,tbl_dt 
+order by tbl_dt 
+
+
+--SMS USAGE UPDATED
+Select /*+parallel(10) */
+msisdn_key,sum(try_cast(amount_enrich as double))as Event_amount
+from hive.feeds.ccn_cdr 
+where tbl_dt between 20241201 and 20241231
+and servicetype = 'SMS'
+and (try_cast(msisdn_key as varchar) in ('250788316300',
+'250788310978',
+'250788316329',
+'250788310730'))
+group by msisdn_key
