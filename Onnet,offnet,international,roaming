@@ -1,0 +1,24 @@
+select msisdn_key,sum(voi_int_in_secs+voi_int_out_b_secs+voi_int_out_nb_secs+voi_int_out_secs_free)/60 International_MIN, sum(voi_roam_moc_secs+voi_roam_moc_free_secs
++voi_roam_mtc_secs+voi_roam_mtc_free_secs)/60 Roaming_MIN,SUM(voi_offnet_in_secs+voi_offnet_out_b_secs+voi_offnet_out_nb_secs+voi_offnet_out_secs_free)/60 Offnet_MIN,SUM(voi_onnet_in_secs+
+voi_onnet_out_b_secs+voi_onnet_out_nb_secs+voi_onnet_out_secs_free)/60 Onnet_MIN
+from hive.bsl.dslcustomersubject
+where tbl_dt between 20260101 and 20260131
+and try_cast(msisdn_key as varchar)in('250780057723',
+'250780091917',
+'250780269820',
+'250788198667')
+group by msisdn_key 
+
+
+
+
+--Incoming calls traffic usage Updated
+select  /*+parallel(10) */
+tbl_dt,msisdn_key,otherpartymsisdn,sum(cast(call_duration_enrich as double))/60 as call_duration_MIN,sum(try_cast(amount_enrich as double))as MA_amount
+from hive.feeds.ccn_cdr 
+where tbl_dt between 20251124 and 20260310
+and servicetype = 'VOICE'
+--and amount_enrich !=0
+and otherpartymsisdn like '%788154200'
+group by otherpartymsisdn,msisdn_key,tbl_dt
+
