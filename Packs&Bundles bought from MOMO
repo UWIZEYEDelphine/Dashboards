@@ -1,0 +1,75 @@
+--
+select a.tbl_dt date_key, a.original_timestamp_enrich original_timestamp, b.msisdn_key msisdn_key,    
+case  
+when upper(a.from_profile) like '%SUBS%' then 'bundle_purchase_momo' else 'bundle_purchase_yc'
+end recharge_type,  
+try_cast(a.amount as double) recharge_amount, b.pam_id,a.to_username
+from hive.feeds.momo_transactions a
+left join hive.feeds.sdp_cdr b
+on (a.financial_transaction_id = b.origtransactionid and a.tbl_dt=b.tbl_dt)
+join hive.analytics.phone_deal_202605  d
+on a.msisdn_key =try_cast(d.msisdn as bigint)
+--where try_cast(a.tbl_dt as varchar) = replace(try_cast(current_date + interval '-1' day as varchar),'-','')
+where a.tbl_dt between 20260501 and 20260531
+and upper(a.to_username) like '%BUNDLES.SP%'
+and transaction_status = 'COMMITTED'
+and b.pam_id IS NOT null
+and b.pam_id <>''
+ 
+union all
+ 
+select a.tbl_dt date_key, a.original_timestamp_enrich original_timestamp, try_cast(a.from_msisdn as double) msisdn_key, 'bundle_purchase_momo' recharge_type, try_cast(a.amount as double) recharge_amount, b.pam_id,a.to_username
+from hive.feeds.momo_transactions a  
+left join hive.feeds.sdp_cdr b
+on (a.external_transaction_id = b.origtransactionid and a.tbl_dt=b.tbl_dt)
+join hive.analytics.phone_deal_202605  d
+on a.msisdn_key =try_cast(d.msisdn as bigint)
+--where try_cast(a.tbl_dt as varchar) = replace(try_cast(current_date + interval '-1' day as varchar),'-','')
+where a.tbl_dt between 20260501 and 20260531
+and( upper(a.to_username) like '%PRESTIGE%'
+	or upper(a.to_username) like '%DATABUNDLE.MTN%'
+	or upper(a.to_username) like '%DATABUNDLES.MTN%'
+	or upper(a.to_username) like '%YOLOBUNDLES.MTN%'
+	or upper(a.to_username) like  '%VOICE%')
+and upper(a.from_profile) like '%SUBS%'
+and transaction_status = 'COMMITTED'
+and b.pam_id IS NOT null
+and b.pam_id <>''
+
+
+
+
+
+select sum(recharge_amount)Recharge_amount
+from(
+select sum(try_cast(a.amount as double)) recharge_amount
+from hive.feeds.momo_transactions a
+left join hive.feeds.sdp_cdr b
+on (a.financial_transaction_id = b.origtransactionid and a.tbl_dt=b.tbl_dt)
+join hive.analytics.phonedeal_202603  d
+on a.msisdn_key =try_cast(d.msisdn as bigint)
+where a.tbl_dt between 20260401 and 20260426
+and upper(a.to_username) like '%BUNDLES.SP%'
+and transaction_status = 'COMMITTED'
+and b.pam_id IS NOT null
+and b.pam_id <>''
+ 
+union all
+ 
+select sum(try_cast(a.amount as double)) recharge_amount
+from hive.feeds.momo_transactions a  
+left join hive.feeds.sdp_cdr b
+on (a.external_transaction_id = b.origtransactionid and a.tbl_dt=b.tbl_dt)
+join hive.analytics.phonedeal_202603  d
+on a.msisdn_key =try_cast(d.msisdn as bigint)
+--where try_cast(a.tbl_dt as varchar) = replace(try_cast(current_date + interval '-1' day as varchar),'-','')
+where a.tbl_dt between 20260401 and 20260426
+and( upper(a.to_username) like '%PRESTIGE%'
+	or upper(a.to_username) like '%DATABUNDLE.MTN%'
+	or upper(a.to_username) like '%DATABUNDLES.MTN%'
+	or upper(a.to_username) like '%YOLOBUNDLES.MTN%'
+	or upper(a.to_username) like  '%VOICE%')
+and upper(a.from_profile) like '%SUBS%'
+and transaction_status = 'COMMITTED'
+and b.pam_id IS NOT null
+and b.pam_id <>'')
