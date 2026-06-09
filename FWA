@@ -1,0 +1,41 @@
+WITH cte AS (
+    SELECT 
+        msisdn_key,
+        tariff_code_v,
+        subs_name_v,
+        last_name_v,
+        registration_date_d,
+        contract_type_v,
+        status_code_v,
+        ROW_NUMBER() OVER (
+            PARTITION BY msisdn_key 
+            ORDER BY registration_date_d DESC
+        ) AS rn
+    FROM hive.feeds.zsmart_gsm_service_mast
+    WHERE (
+            tariff_code_v LIKE 'FWA _Speed 30MBPS'
+        OR tariff_code_v LIKE 'FWA_ Volume 150GB(Prepaid)'
+        OR tariff_code_v LIKE 'FWA _Speed 20MBPS'
+        OR tariff_code_v LIKE 'FWA_ Volume 350GB(Prepaid)'
+        OR tariff_code_v LIKE 'FWA_Volume 60GBs(Prepaid)'
+        OR tariff_code_v LIKE 'RISA_Urugonet_30mbps'
+        OR tariff_code_v LIKE 'RISA_Urugonet_20mbps'
+        OR tariff_code_v LIKE 'FWA_20mbps'
+        OR tariff_code_v LIKE 'FWA_10mbps'
+        OR tariff_code_v LIKE 'FWA _30mbps'
+    )
+    AND tbl_dt BETWEEN 20250501 AND 20260514
+    AND status_code_v = 'Active'
+)
+
+SELECT 
+    msisdn_key,
+    tariff_code_v,
+    subs_name_v,
+    last_name_v,
+    registration_date_d,
+    contract_type_v,
+    status_code_v
+FROM cte
+WHERE rn = 1
+ORDER BY registration_date_d;
