@@ -1,0 +1,13 @@
+select -sum(try_cast(pam_amount_enrich as double))transactionamount 
+from hive.feeds.sdp_cdr sdp 
+join hive.analytics.phonedeal_202603 d 
+on sdp.msisdn_key =try_cast(d.msisdn as bigint) 
+where CAST(parse_datetime(CAST(tbl_dt AS varchar), 'yyyyMMdd') AS date) BETWEEN DATE_TRUNC('month', DATE_ADD('day', -1, current_date)) AND DATE_ADD('day', -1, current_date) and cdrtypemain = 'PAM' and transaction_type_enrich = -1
+
+
+select -sum(try_cast(c.pam_amount_enrich as double)) Amount_charged
+from hive.feeds.sdp_cdr c
+join hive.analytics.phonedeal_202603 d 
+on c.msisdn_key =try_cast(d.msisdn as bigint)
+where c.originnodeid like '%Rollback%'
+and tbl_dt between 20260401 and 20260427
