@@ -1,0 +1,37 @@
+with 
+	Base as (select msisdn_key MSISDN,service_class SC
+		from hive.bsl.dslcustomersubject
+		where service_class='50'
+		and tbl_dt=20260414),
+	SDP	as (select distinct msisdn_key Numero,sum(voi_offnet_out_b_secs)Offnet_out_Sec,
+		sum(voi_onnet_out_b_secs)Onnet_out_Sec, sum(rev_voice_onnet)Rev_onnet,sum(rev_voice_offnet)Rev_offnet
+		from hive.bsl.dslcustomersubject
+		where rev_voice_pack =0
+		and tbl_dt between 20251101 and 20251131
+		group by msisdn_key) 
+select MSISDN,SC,Offnet_out_Sec,Onnet_out_Sec,Rev_onnet,Rev_offnet
+from Base
+left join SDP
+on Base.MSISDN=SDP.Numero
+
+
+
+---WITH ROAMING
+with 
+	Base as (select msisdn_key MSISDN,service_class SC
+		from hive.bsl.dslcustomersubject
+		where service_class='50'
+		and tbl_dt=20260503),
+	SDP	as (select distinct tbl_dt Date_,msisdn_key Numero,sum(voi_offnet_out_b_secs)Offnet_out_Sec, sum(voi_roam_moc_secs)Roaming_Sec,
+		sum(voi_onnet_out_b_secs)Onnet_out_Sec, sum(rev_voice_onnet)Rev_onnet,sum(rev_voice_offnet)Rev_offnet, SUM(rev_voice_roam_incoming)Rev_roam_Inc
+		from hive.bsl.dslcustomersubject
+		where rev_voice_pack =0
+		and tbl_dt between 20260401 and 20260431
+		group by tbl_dt,msisdn_key) 
+--select MSISDN,SC,Offnet_out_Sec,Onnet_out_Sec,Roaming_Sec,Rev_onnet,Rev_offnet,Rev_roam_Inc
+select Date_,sum(Offnet_out_Sec)sum,sum(Onnet_out_Sec)Onnet_out_Sec,Sum(Roaming_Sec)Roaming_Sec,Sum(Rev_onnet)Rev_onnet,sum(Rev_offnet)Rev_offnet,sum(Rev_roam_Inc)Rev_roam_Inc
+from Base
+left join SDP
+on Base.MSISDN=SDP.Numero
+group by Date_
+order by Date_
