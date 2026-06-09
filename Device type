@@ -1,0 +1,34 @@
+--Device -type
+
+select msisdn_key ,lte_4g_ind ,
+	device_type,
+	case 
+		WHEN device_type = '1' THEN 'Card_Pluggable'
+		WHEN device_type = '2' THEN 'Modem'
+		WHEN device_type = '3' THEN 'M2M'
+		WHEN device_type = '4' THEN 'Feature Phone'
+		WHEN device_type = '5' THEN 'Smartphone'
+		WHEN device_type = '6' THEN 'Tablet'
+		WHEN device_type = '7' THEN 'Basic'
+		WHEN device_type = '8' THEN 'UNKNOWN'
+		WHEN device_type = '' THEN 'Other'
+	END AS phone_category
+from hive.bsl.dslcustomersubject 
+where tbl_dt = 20231130 
+	and try_cast(msisdn_key as varchar) in ('250788380315',
+'250788380321',
+'250788380322',
+'250788380323')
+
+
+
+--Sim-type
+
+select
+	msisdn_key,
+	sim_type
+from
+	hive.feeds.zsmart_gsm_service_mast
+where
+	msisdn_key = 250784495431
+	and tbl_dt = 20230827
