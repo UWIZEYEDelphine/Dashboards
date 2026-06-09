@@ -1,0 +1,209 @@
+DECLARE @EmailBody NVARCHAR(MAX);
+DECLARE @TodayDate NVARCHAR(50) = CONVERT(DATE, GETDATE() - 1);
+SET @EmailBody = '<html>
+<head>
+<style>
+  table {
+    width: 90%;
+    max-width: 600px;
+    table-layout: fixed;
+    margin: auto;
+  }
+  
+  @media screen and (max-width: 600px) {
+    table {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+<h2 style="color:#333;">EBU BUY FOR OTHERS Report</h2>
+<p style="font-size:18px; color:#555;">Daily Performance as of ' + @TodayDate + '</p>'
+
+SET @EmailBody = @EmailBody +
+'<table border="1" cellpadding="3" cellspacing="0" style="width:40%; table-layout:fixed; margin:auto; font-size:10px;">
+<colgroup>
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+    <col style="width:20%;">
+</colgroup>
+<tr style="background-color:#FFD700; color:#333;">
+<th>KPI</th>
+<th>TODAY</th>
+<th>PREVIOUS_DAY</th>
+<th>CHANGE</th>
+<th>MTD</th>
+<th>PMTD</th>
+<th>MTD_CHANGE</th>
+</tr>';
+
+WITH B4O AS (
+	SELECT 
+    'B4O Revenue'AS KPI,
+    FORMAT(B4O_Revenue_today, '#,##0')AS TODAY,
+    FORMAT(B4O_Revenue_prev, '#,##0')AS PREVIOUS_DAY,
+	FORMAT(ISNULL(((CAST(B4O_Revenue_today AS FLOAT) - B4O_Revenue_prev) / NULLIF(CAST(B4O_Revenue_prev AS FLOAT), 0)) * 100, 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) / NULLIF(PMTD_revenue, 0)) * 100, 0), '#,##0.00') + '%' AS MTD_Change
+
+FROM OPENQUERY(
+EVA,'select -SUM(TRY_CAST(pam_amount_enrich as DOUBLE)) as B4O_Revenue_today,
+(select -SUM(TRY_CAST(pam_amount_enrich as DOUBLE))
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -2,current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)B4O_Revenue_prev,
+(select -SUM(TRY_CAST(pam_amount_enrich as DOUBLE))
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date)) AND DATE_ADD(''day'', -1, current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)MTD_revenue,
+(select -SUM(TRY_CAST(pam_amount_enrich as DOUBLE))
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_ADD(''month'', -1, DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date))) 
+AND DATE_ADD(''month'', -1, DATE_ADD(''day'', -1, current_date)) 
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)PMTD_revenue
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -1,current_date) 
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0
+') AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'B4O Counts',
+    FORMAT(B4O_Counts_today, '#,##0'),
+    FORMAT(B4O_Counts_prev, '#,##0'),
+    FORMAT(ISNULL(((B4O_Counts_today - B4O_Counts_prev) * 100.0 / NULLIF(B4O_Counts_prev, 0)), 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) * 100.0 / NULLIF(PMTD_revenue, 0)), 0), '#,##0.00') + '%' AS MTD_Change
+FROM OPENQUERY(
+EVA,'select COUNT(*)as B4O_Counts_today,
+(select COUNT(*)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -2,current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)B4O_Counts_prev,
+(select COUNT(*)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date)) AND DATE_ADD(''day'', -1, current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)MTD_revenue,
+(select COUNT(*)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_ADD(''month'', -1, DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date))) 
+AND DATE_ADD(''month'', -1, DATE_ADD(''day'', -1, current_date))
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)PMTD_revenue
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -1,current_date) 
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0
+') AS SubQuery
+
+UNION ALL
+
+SELECT 
+    'B4O MSISDN Counts',
+    FORMAT(B4O_MSI_today, '#,##0'),
+    FORMAT(B4O_MSI_prev, '#,##0'),
+    FORMAT(ISNULL(((B4O_MSI_today - B4O_MSI_prev) * 100.0 / NULLIF(B4O_MSI_prev, 0)), 0), '#,##0.00') + '%' AS Change,
+	FORMAT(MTD_revenue, '#,##0') AS MTD,
+    FORMAT(PMTD_revenue, '#,##0') AS PMTD,
+    FORMAT(ISNULL(((MTD_revenue - PMTD_revenue) * 100.0 / NULLIF(PMTD_revenue, 0)), 0), '#,##0.00') + '%' AS MTD_Change
+FROM OPENQUERY(
+EVA,'select COUNT(distinct c.msisdn_key)as B4O_MSI_today,
+(select COUNT(distinct c.msisdn_key)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -2,current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)B4O_MSI_prev,
+(select COUNT(distinct c.msisdn_key)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date)) AND DATE_ADD(''day'', -1, current_date)
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)MTD_revenue,
+(select COUNT(distinct c.msisdn_key)
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)
+BETWEEN DATE_ADD(''month'', -1, DATE_TRUNC(''month'', DATE_ADD(''day'', -1, current_date))) 
+AND DATE_ADD(''month'', -1, DATE_ADD(''day'', -1, current_date))
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0)PMTD_revenue
+from hive.feeds.sdp_cdr c
+join hive.analytics.phone_deal_202604  d
+on c.msisdn_key =d.msisdn   
+where  CAST(parse_datetime(CAST(tbl_dt AS varchar), ''yyyyMMdd'') AS date)= DATE_ADD(''day'', -1,current_date) 
+and originnodetype like ''Me2U''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0
+') AS SubQuery
+)
+-- Fill Table with Data
+SELECT @EmailBody = @EmailBody + 
+'<tr><td>' + ISNULL(KPI, 'N/A') + '</td><td>' + ISNULL(Today, '0') + '</td><td>' + ISNULL(PREVIOUS_DAY, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + Change + '</td>
+<td>' + ISNULL(MTD, '0') + '</td><td>' + ISNULL(PMTD, '0') + '</td>
+<td style="color:' + CASE 
+    WHEN MTD_Change LIKE '-%' THEN 'red'  
+    ELSE 'green'  
+END + ';">' + MTD_Change + '</td></tr>'
+FROM B4O;
+SET @EmailBody = @EmailBody + '</table>';
+
+SET @EmailBody = @EmailBody + '<p style="font-size:10px; color:#8B0000;">B4O:Buy For Others MTD:Month to Date PMTD:Previous Month to Date</p>
+<p style="font-size:18px; color:#555;">Let me know if further analysis is needed.</p></body></html>';
+EXEC msdb.dbo.sp_send_dbmail
+   @profile_name =  'email_notification',
+    @recipients =   'Didas.Ndoli@mtn.com; exode.rukundo@mtn.com;Elvis.Shema@mtn.com;kenneth.murangira@mtn.com; aimable.kabanda@mtn.com; joseph.gatete@mtn.com; emelyne.ayateke@mtn.com; raissa.ishimwe@mtn.com; Delphine.Uwizeye@mtn.com; Joyeuse.Umutoni@mtn.com; olivier.habineza@mtn.com; Fatuma.Mohamed@mtn.com',
+    @subject = 'EBU B4O Report',
+    @body = @EmailBody,
+    @body_format = 'HTML';
