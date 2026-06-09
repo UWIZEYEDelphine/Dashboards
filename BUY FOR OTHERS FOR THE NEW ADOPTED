@@ -1,0 +1,49 @@
+begin
+declare @body varchar(8000) 
+declare @subject varchar(8000) 
+declare @query varchar(8000)
+declare @date varchar(8000) 
+declare @filename varchar(8000) 
+declare @temp char(9)
+declare @date2 varchar(8000) 
+set @date2 = convert(varchar,(DATEADD(day,-1,getdate())),23)
+set @date = convert(NCHAR(8),dateadd(day,datediff(day,1,GETDATE()),0),112)
+set @filename = ''+@date+'Buy for Others-(Base we are pushing).csv'
+SET @query='SELECT * FROM OPENQUERY(
+EVA,''
+select tbl_dt as DATE_,c.msisdn_key as MSISDN,COUNT(*) as COUNT_,-SUM(TRY_CAST(pam_amount_enrich as DOUBLE)) as AMOUNT,
+originnodeid as PACK_PURCHASED
+from hive.feeds.sdp_cdr c
+join hive.analytics.b40_push  d
+on c.msisdn_key =try_cast(d.msisdn as bigint)  
+where  cast(c.tbl_dt as varchar) like ''''202605%'''' and CAST(parse_datetime(CAST(tbl_dt AS varchar), ''''yyyyMMdd'''') AS date) <= DATE_ADD(''''day'''', -1, current_date) 
+and originnodetype like ''''Me2U''''
+and transaction_type_enrich !=4
+and pam_amount_enrich !=0
+ GROUP BY c.tbl_dt,c.msisdn_key,c.originnodeid
+ ORDER BY c.tbl_dt'')'
+set @temp = char(9);
+set @body = 'Hello team,
+Kindly find attached the Buy for others report for The base who were not sending B4O before May as of '+@date2+'
+
+Regards
+'
+set @subject = 'Buy for Others for New Adopted'
+sp_send_dbmail: EXECUTE AS LOGIN = N'sa'
+
+EXEC msdb.dbo.sp_send_dbmail    
+@profile_name = 'email_notification', 
+@recipients ='Delphine.Uwizeye@mtn.com;exode.rukundo@mtn.com;joseph.gatete@mtn.com;raissa.ishimwe@mtn.com;Joyeuse.Umutoni@mtn.com;Elvis.Shema@mtn.com',   
+@subject =  @subject,
+@execute_query_database = 'EBU_REPORTS',
+@body= @body,
+@query = @query,
+@attach_query_result_as_file = 1,
+@query_attachment_filename = @filename,
+@query_result_separator=@temp,   
+@query_result_header = 1,
+@append_query_error = 0,
+@query_no_truncate = 0,
+@query_result_no_padding=1, 
+@exclude_query_output = 0
+End;
