@@ -1,0 +1,40 @@
+with CTE as(
+select c.msisdn_key,m.site_name ,m.district ,m.sector,count(*)as count_
+from hive.dim.dim_maps m
+join hive.bsl.dslcustomersubject c on c.bts_night_site_id =replace(m.cgi,'-','')  
+where( m.site_name like '%Remera%'
+or m.site_name like '%Karembure%'
+or m.site_name like '%Gacuriro%'
+or m.site_name like '%Gahanga%'
+or m.site_name like '%Umucyo Estate%'
+or m.site_name like '%Gasogi%'
+or m.site_name like '%Gisozi%'
+or m.site_name like '%Kanombe%'
+or m.site_name like '%Nyagatare%'
+or m.site_name like '%Kirehe%'
+or m.site_name like '%Nyamata%'
+or m.site_name like '%Kibagabaga%'
+or m.site_name like '%Kicukiro%'
+or m.site_name like '%Kimihurura%'
+or m.site_name like '%Kimironko%'
+or m.site_name like '%Kimisagara%'
+or m.site_name like '%Rusororo%'
+or m.site_name like '%Kagugu%'
+or m.site_name like '%Norvege%'
+or m.site_name like '%Rebero%'
+or m.site_name like '%Masaka%'
+or m.site_name like '%Nyamirambo%'
+or m.site_name like '%Nyarutarama%'
+or m.site_name like '%Ruyenzi%'
+or m.site_name like '%Rubavu%'
+or m.site_name like '%Bumbogo%'
+or m.site_name like '%Bisambu%'
+or m.site_name like '%Musanze%'
+or m.site_name like '%Mbugangali%')
+and (c.tbl_dt between 20230801 and 20230817)
+group by c.msisdn_key ,m.site_name ,m.district ,m.sector)
+select c.*,sum(try_cast(g.data_volume_incoming_1 as double)/1024) as Mobile_data_usage_MBs 
+from CTE c
+join hive.feeds.ccn_gprs_ma g on g.msisdn_key =c.msisdn_key
+where (g.tbl_dt between 20230801 and 20230817)
+group by g.msisdn_key ,g.tbl_dt, c.msisdn_key ,c.site_name ,c.district ,c.sector,c.count_
