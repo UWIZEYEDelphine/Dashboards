@@ -1,0 +1,9 @@
+--Rating Group
+select substring(try_cast(tbl_dt as varchar),1,6)Month,tbl_dt,COUNT(servedmsisdn_norm)as Count_,(sum(try_cast(data_volume_enrich as double)))/(1024*1024*1024) as Data_usage_GB
+from hive.feeds.ccn_cdr c
+--where c.tbl_dt=20250127
+where c.tbl_dt between 20250903 and 20250908
+and ratinggroup  = '2559' 
+and servicetype ='GPRS'
+group by substring(try_cast(tbl_dt as varchar),1,6),tbl_dt 
+order by tbl_dt 
