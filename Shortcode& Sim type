@@ -1,0 +1,20 @@
+--Shortcode
+select substring(try_cast(tbl_dt as varchar),1,6)month,count(msisdn)Traffic
+from hive.feeds.ussd_cdr 
+where tbl_dt between 20250101 and 20250131 and short_code ='774'
+group by substring(try_cast(tbl_dt as varchar),1,6)
+order by substring(try_cast(tbl_dt as varchar),1,6)
+
+
+--Sim type
+select
+	msisdn_key,
+	sim_type
+from
+	hive.feeds.zsmart_gsm_service_mast
+where
+	msisdn_key = 250784495431
+and tbl_dt = 20230827
+
+
+--
