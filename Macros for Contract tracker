@@ -1,0 +1,46 @@
+Public Sub SendEmail02()
+Dim Date_Range As Range
+Dim Mail_Recipient As Range
+Dim Email_Text As Range
+Dim Outlook_App_Create As Object
+Dim Mail_Item As Object
+Dim Last_Row As Long
+Dim VB_CR_LF, Email_Body, Date_Range_Value, Send_Value, Subject As String
+Dim i As Long
+On Error Resume Next
+Set Date_Range = Application.InputBox("Please choose the date range:", "Message Box", , , , , , 8)
+If Date_Range Is Nothing Then Exit Sub
+Set Mail_Recipient = Application.InputBox("Please select the Email addresses:", "Message Box", , , , , , 8)
+If Mail_Recipient Is Nothing Then Exit Sub
+Set Email_Text = Application.InputBox("Select the Email Text:", "Message Box", , , , , , 8)
+If Email_Text Is Nothing Then Exit Sub
+Last_Row = Date_Range.Rows.Count
+Set Date_Range = Date_Range(1)
+Set Mail_Recipient = Mail_Recipient(1)
+Set Email_Text = Email_Text(1)
+Set Outlook_App_Create = CreateObject("Outlook.Application")
+For i = 1 To Last_Row
+Date_Range_Value = ""
+Date_Range_Value = Date_Range.Offset(i - 1).Value
+If Date_Range_Value <> "" Then
+If CDate(Date_Range_Value) - Date <= 30 And CDate(Date_Range_Value) - Date > 0 Then
+Send_Value = Mail_Recipient.Offset(i - 1).Value
+Subject = " A Kind Reminder! "
+VB_CR_LF = "<br><br>"
+Email_Body = "<HTML><BODY>"
+Email_Body = Email_Body & "Dear " & Send_Value & VB_CR_LF
+Email_Body = Email_Body & "Kindly Check the contract tracker, " & Email_Text.Offset(i - 1).Value & " on " & Date_Range_Value & VB_CR_LF
+Email_Body = Email_Body & "</BODY></HTML>"
+Set Mail_Item = Outlook_App_Create.CreateItem(0)
+With Mail_Item
+.Subject = Subject
+.To = Send_Value
+.HTMLBody = Email_Body
+.Display
+End With
+Set Mail_Item = Nothing
+End If
+End If
+Next
+Set Outlook_App_Create = Nothing
+End Sub
