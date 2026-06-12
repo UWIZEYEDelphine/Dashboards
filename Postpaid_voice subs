@@ -1,0 +1,33 @@
+select tbl_dt,subscriber_name ,service_id ,current_status,sub_category_code ,package_name,price
+from hive.feeds.wbs_rpt_postpaid_gsm_churn_voice_and_data
+where tbl_dt between 20260429 and 20260430
+order by tbl_dt 
+
+select distinct msisdn_key ,customer_type,b2b_type,cons_type,first_name ,tariff_type Status,last_name 	
+from hive.bsl.dslcustomersubject 	
+where subscriber_type ='POSTPAID' and tbl_dt between 20260401 and 20260431
+and b2b_type like '%BUSINESS%'
+
+
+
+
+
+--all MA Usage Updated
+select  /*+parallel(10) */
+msisdn_key,sum(try_cast(amount_enrich as double))as Event_amount
+from hive.feeds.ccn_cdr 
+where tbl_dt between 20250401 and 20250431
+--and servicetype = 'SMS'
+and (try_cast(msisdn_key as varchar) in ('250788300832',
+'250786670620',
+'250789785942',
+'250782892795'
+))
+group by msisdn_key
+
+
+--counting Business time Subs
+select distinct count(msisdn_key)counts 	
+from hive.bsl.dslcustomersubject 	
+where subscriber_type ='POSTPAID' and (tbl_dt=20250630)  and status ='ACTIVE'
+and b2b_type like '%BUSINESS%'
