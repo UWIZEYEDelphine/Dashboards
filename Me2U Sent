@@ -1,0 +1,6 @@
+select distinct msisdn_key as MSISDN,sum(send_air_me2u_amt) as MeUSent
+from hive.bsl.dslcustomersubject
+where date_key between 20240301 and 20240326  and try_cast(msisdn_key as varchar) in ('250788307041',
+'250788435110',
+'250788540886')
+group by msisdn_key
