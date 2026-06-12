@@ -1,0 +1,313 @@
+USE [EBU_REPORTS]
+GO
+/****** Object:  StoredProcedure [dbo].[phone_deal_data_mart]    Script Date: 23/10/2024 12:29:15 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		BI team
+-- Create date: 20230608
+-- Description:	Phone deal KPIs 
+-- =============================================
+ALTER PROCEDURE [dbo].[phone_deal_data_mart]
+
+
+	@fetchDate AS VARCHAR(30) , --Required
+	--@fetchDate_1 AS VARCHAR(30) , --In case it is needed
+	@errorMessage AS VARCHAR(4000) OUTPUT
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+   --Variable for error accumulation
+        DECLARE @errorTemp AS VARCHAR(4000);
+        --Check supplied date
+        --IF @fetchDate IS NULL --or @endDate IS NULL
+            BEGIN
+                SET @errorMessage+='Error #-1 | Severity #-1 | State #-1 | Procedure: monthly_reports | Line #-1 | Message: Date not supplied';
+        END;
+	               
+        BEGIN TRY
+	  DECLARE @cDate AS VARCHAR(30) = @fetchDate;
+            DECLARE @query AS VARCHAR(MAX);
+            DECLARE @table AS VARCHAR(90)= 'ebu_phone_deal_rgs'
+	DECLARE @table2 AS VARCHAR(90)= 'ebu_phone_deal_recharges'
+	DECLARE @table3 AS VARCHAR(90)= 'ebu_phone_deal_revenue'  
+	DECLARE @table4 AS VARCHAR(90)=  'ebu_phone_deal_data_usage'
+	DECLARE @table5 AS VARCHAR(90)=  'ebu_phone_deal_vas_usage'
+	DECLARE @table6 AS VARCHAR(90)=  'ebu_phone_deal_sms_usage'
+	DECLARE @table7 AS VARCHAR(90)=  'ebu_phone_deal_roaming_usage'
+	DECLARE @table8 AS VARCHAR(90)=  'ebu_phone_deal_intenational_usage'
+	DECLARE @table9 AS VARCHAR(90)=  'ebu_phone_deal_offnet_usage'
+	DECLARE @table10 AS VARCHAR(90)=  'ebu_phone_deal_onnet_usage'
+	DECLARE @table11 AS VARCHAR(90)=  'ebu_phone_deal_location'
+	DECLARE @table12 AS VARCHAR(90)=  'ebu_phone_deal_device'
+	DECLARE @table13 AS VARCHAR(90)=  'ebu_phone_deal_area '
+	
+	
+BEGIN
+
+--AREA 
+SET @query = ' INSERT INTO ' + @table13 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,service_class,'''' as Opco_Business_Type,  '''' as UID, d.msisdn_key,	subscriber_type,	Customer_Type,	B2B_Type,	Cons_Type,	tariff_type ,	last_activity_date  gsm_last_activity_date,	
+last_rge_date  gsm_last_RGE_date, first_usage_date 	gsm_First_Usage_Date,
+last_activity_date  gsm_Last_Usage_Date,	First_Recharge_Date,	Last_Recharge_date,	activation_date,	churn_date,	status,	DOLA	
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Device 
+SET @query = ' INSERT INTO ' + @table12 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key, d.msisdn_key, service_class,HS_Make,	HS_Model,	NW_2G_IND,	NW_3G_IND,	LTE_4G_IND,	SMARTPHONE_IND,	EDGE_IND,	GPRS_IND	
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Location 
+SET @query = ' INSERT INTO ' + @table11 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key, d.msisdn_key,service_class,BTS_MU_LAT,	BTS_MU_LON,	BTS_MU_SITE_ID,	BTS_DAY_LAT,
+BTS_DAY_LON,	BTS_DAY_SITE_ID,	BTS_NIGHT_LAT,	BTS_NIGHT_LON,	BTS_NIGHT_SITE_ID
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Onnet Usage
+SET @query = ' INSERT INTO ' + @table10 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,voi_onnet_in_secs,	voi_onnet_in_counter,	
+voi_onnet_out_b_secs,	voi_onnet_out_b_counter,	voi_onnet_out_nb_secs,	voi_onnet_out_nb_counter,	voi_onnet_out_secs_free,	
+voi_onnet_out_counter_free,	voi_cc_out_secs,	voi_cc_out_counter
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Offnet Usage
+SET @query = ' INSERT INTO ' + @table9 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,voi_offnet_in_secs,	voi_offnet_in_counter,	voi_offnet_out_b_secs,	
+voi_offnet_out_b_counter,	voi_offnet_out_nb_secs,	voi_offnet_out_nb_counter,	voi_offnet_out_secs_free,	voi_offnet_out_counter_free
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Int Usage
+SET @query = ' INSERT INTO ' + @table8 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,voi_int_in_secs,	voi_int_in_counter,	voi_int_out_b_secs,	voi_int_out_b_counter,	voi_int_out_nb_secs,	voi_int_out_nb_counter,	
+int_top_incoming_destination,	int_top_outgoing_destination,	int_moc_countries,	int_top_moc_country_calls,	int_top_moc_country_secs,	
+int_mtc_countries,	int_top_mtc_country_calls,	int_top_mtc_country_secs,	voi_int_out_secs_free,	voi_int_out_counter_free
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Roaming Usage
+SET @query = ' INSERT INTO ' + @table7 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/	
+tbl_dt as Date_key,d.msisdn_key,service_class,voi_roam_moc_secs,	voi_roam_moc_counter,	voi_roam_moc_free_secs,	voi_roam_moc_free_counter,	voi_roam_mtc_secs,	voi_roam_mtc_counter,	
+voi_roam_mtc_free_secs,	voi_roam_mtc_free_counter
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--SMS Usage
+SET @query = ' INSERT INTO ' + @table6 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,sms_in_count,	sms_onnet_out_b_count,	sms_onnet_out_nb_count,	sms_onnet_out_count_free,	
+sms_offnet_out_b_count,	sms_offnet_out_nb_count,	sms_offnet_out_count_free,	sms_int_out_b_count,	sms_int_out_nb_count,	
+sms_int_out_count_free
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Vas usage
+SET @query = ' INSERT INTO ' + @table5 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,VAS_Subscription_1,	VAS_Subscription_2,	VAS_Subscription_3,	VAS_Subscription_4,	VAS_Subscription_Other
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Data usage
+SET @query = ' INSERT INTO ' + @table4 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,Data_kb,	
+Data_dl_kb,	Data_up_kb,	Data_Free_Kb,	Data_Roam_kb
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Revenue
+SET @query = ' INSERT INTO ' + @table3 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,rev_voice_onnet,	rev_voice_offnet,	
+rev_voice_int,	rev_voice_roam_outgoing,	rev_voice_roam_incoming,	rev_voice_pack,	rev_sms_onnet,	rev_sms_offnet,	rev_sms_int,	
+rev_sms_roaming,	rev_VAS1,	rev_VAS2,	rev_VAS3,	rev_VAS4,	rev_other_VAS,	rev_data_rental,	rev_data_payg,	rev_data_roaming ,	
+rev_data_total,	rev_rentals,	rev_other,	tot_rev_in,	tot_rev_out,	tot_rev	
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--Recharge Usage
+SET @query = ' INSERT INTO ' + @table2 + '
+select * from openquery(eva,''
+select /*+parallel(10)*/
+tbl_dt as Date_key,d.msisdn_key,service_class,Rch_count_Digital,	Rch_Digital_Rev,	rch_count_Voucher,	rch_Voucher_Rev,	
+rch_last_date,	reload_digital_amt,	reload_physical_amt,	reload_admin_amt,	reload_mobile_money_amt,	reload_xtra_airtime_loan_amt,	
+send_air_me2u_amt,	reload_air_other_amt,	momo_profile,	momo_account_status,	momo_dola,	gender,	dob,	age_bracket,
+first_name,	last_name,	subscriber_birthday,	preffered_language
+from hive.bsl.dslcustomersubject d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+---------------------------------------------------------------------------------------------------------------------------------------
+
+--RGS
+SET @query = ' INSERT INTO ' + @table + '
+select * from openquery(eva,''
+select tbl_dt as Date_key,d.msisdn_key, new_activation_cnt,  rgs1_cnt rgs_1, rgs7_cnt rgs_7, rgs30_closing_cnt rgs_30, 
+rgs90_closing_cnt rgs_90, rgs90_returner_cnt, rgs_90_churner_cnt
+from hive.bsl.subscriber_movement d 
+join hive.analytics.olivier_phone_deal_202409  p
+on d.msisdn_key = p.msisdn_key
+where d.tbl_dt = '+@fetchDate+'
+'')						                                   
+';
+PRINT @query;
+EXEC (@query); 
+
+END;
+
+            SET @errorMessage = 'Succesfully loaded master agent report to ' + @table;
+            RETURN;
+        END TRY
+        BEGIN CATCH
+            --Error retrieval.
+            SELECT @errorMessage = ERROR_NUMBER();
+            SET @errorTemp = 'Error #' + (CASE
+                                              WHEN @errorMessage IS NULL
+                                              THEN ' '
+                                              ELSE @errorMessage
+                                          END) + ' | ';
+            SELECT @errorMessage = ERROR_SEVERITY();
+            SET @errorTemp = @errorTemp + 'Severity #' + (CASE
+                                                              WHEN @errorMessage IS NULL
+                                                              THEN ' '
+                                                              ELSE @errorMessage
+                                                          END) + ' | ';
+            SELECT @errorMessage = ERROR_STATE();
+            SET @errorTemp = @errorTemp + 'State #' + (CASE
+                                                           WHEN @errorMessage IS NULL
+                                                           THEN ' '
+                                                           ELSE @errorMessage
+                                                       END) + ' | ';
+            SELECT @errorMessage = ERROR_PROCEDURE();
+            SET @errorTemp = @errorTemp + 'Procedure: ' + (CASE
+                                                               WHEN @errorMessage IS NULL
+                                                               THEN ' '
+                                                               ELSE @errorMessage
+                                                           END) + ' | ';
+            SELECT @errorMessage = ERROR_LINE();
+            SET @errorTemp = @errorTemp + 'Line #' + (CASE
+                                                          WHEN @errorMessage IS NULL
+                                                          THEN ' '
+                                                          ELSE @errorMessage
+                                                      END) + ' | ';
+            SELECT @errorMessage = ERROR_MESSAGE();
+            SET @errorTemp = @errorTemp + 'Message: ' + (CASE
+                                                             WHEN @errorMessage IS NULL
+                                                             THEN ' '
+                                                             ELSE @errorMessage
+                                                         END);
+            PRINT @errorTemp;
+            SET @errorMessage+=@errorTemp;
+        END CATCH;
+
+  
+    END;
