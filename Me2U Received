@@ -1,0 +1,35 @@
+select distinct msisdn_key as MSISDN,sum(cast(b.transaction_amt as double)) as MeUReceived
+from hive.feeds.air_refill_ma
+where msisdn_key=250780304762
+and tbl_dt between 20240301 and 20240326
+order by tbl_dt
+
+
+--Me2U received updated
+
+select tbl_dt ,msisdn_key ,transactionamount,external_data_1_enrich Sender 
+from hive.feeds.air_cdr
+where msisdn_key =250784156247
+and tbl_dt between 20250101 and 20250109
+Order by tbl_dt
+
+
+
+
+--Me2U received updated WHERE SENDER IS PHONEDEAL ERS
+
+select tbl_dt ,msisdn_key ,transactionamount,external_data_1_enrich Sender 
+from hive.feeds.air_cdr
+where msisdn_key =250784156247
+and tbl_dt between 20250101 and 20250109
+and originnodetype='ERSR2S'
+and transactiontype='Credit'
+Order by tbl_dt
+
+
+--OUR ERS
+select tbl_dt ,msisdn_key ,transactionamount,external_data_1_enrich Sender 
+from hive.feeds.air_cdr
+where tbl_dt between 20250401 and 20250429
+and external_data_1_enrich ='250786094252'
+order by tbl_dt 
