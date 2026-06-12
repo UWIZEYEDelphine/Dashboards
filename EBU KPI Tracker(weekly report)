@@ -1,0 +1,49 @@
+--Voice revenue and voice RGS1
+select distinct date_key as Date_key,sum(R.rev_voice_int+R.rev_voice_offnet+R.rev_voice_onnet+R.rev_voice_pack+R.rev_voice_roam_incoming+R.rev_voice_roam_outgoing)Voice_Revenue,count(msisdn_key)Voice_count_RGS1
+from [dbo].[ebu_phone_deal_revenue]R
+where date_key between 20240308 and 20240317 AND (R.rev_voice_int+R.rev_voice_offnet+R.rev_voice_onnet+R.rev_voice_pack+R.rev_voice_roam_incoming+R.rev_voice_roam_outgoing)<>0  
+group by date_key
+order by date_key
+
+--DATA RGS1 (not sure)AND DATA REVENUES
+select distinct date_key as Date_key,sum(R.rev_data_total)Data_totalRevenue,count(msisdn_key)Count_
+from [dbo].[ebu_phone_deal_revenue]R
+where date_key between 20240308 and 20240317 and R.rev_data_total<>0    
+group by Date_key
+order by Date_key
+
+
+--Data RGS1 and Data usage
+
+select distinct date_key Date_key,SUM((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024)) Data_Usage_TB,COUNT(distinct msisdn_key) RGS1_DATA
+from [dbo].[ebu_phone_deal_data_usage]
+--where date_key=20240126
+where  date_key between 20240308 and 20240317 and ((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024))<>0
+group by date_key
+--having SUM((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024))<>0
+order by date_key
+
+--Data rgs1_ADS
+select distinct date_key Date_key,SUM((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024)) Data_Usage_TB,COUNT(distinct msisdn_key) RGS1_DATA_ADS
+from [dbo].[ebu_phone_deal_data_usage]
+--where date_key=20240126
+where  date_key between 20240308 and 20240317 and ((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024))>=0.0000047684
+group by date_key
+--having SUM((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024))>=0.0000047684
+order by date_key
+
+
+--RGS1
+select distinct Date_key as Date_key,sum(G.rgs_1)RGS1
+from [dbo].[ebu_phone_deal_rgs]G
+where  date_key between 20240308 and 20240317
+group by date_key
+--having SUM((Data_kb+Data_Free_Kb+Data_Roam_kb+Data_up_kb)/(1024*1024*1024))>=0.0000047684
+order by date_key
+
+
+
+
+Booster bundles
+To change the menu for the customers of tubitayeho
+Check the airtime balances now
